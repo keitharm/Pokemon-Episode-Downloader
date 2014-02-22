@@ -1,8 +1,15 @@
 <?php
 require_once("global.php");
 
+// Argument mode/episode number
+$arg = $argv[1];
+
 // Attempt to fetch all pokemon episodes
-if ($argv[1] == "test") {
+if ($arg == "test") {
+
+    // Start timer
+    $time_start = microtime(true);
+
     for ($a = 1; $a < 808; $a++) {
         $episode = poke($a);
         if ($episode != null) {
@@ -11,28 +18,55 @@ if ($argv[1] == "test") {
             echo "\033[31mEpisode " . $a . " not found!\033[0m\n";
         }
     }
+    echo "\nData fetched in " . (microtime(true)-$time_start) . " seconds.\n";
+
+// Retrieve a range of episodes
+} else if (strpos($arg, "-") != false) {
+
+    // Start timer
+    $time_start = microtime(true);
+    // Extract range
+    $range = explode("-", $arg);
+    // Range error checking
+    if ($range[0] > $range[1] || !is_numeric($range[0]) || !is_numeric($range[1])) {
+        die("\033[31mError: Episode range is invalid!\n");
+    }
+
+    // Fetch episode data
+    echo "Attempting to retrieve Pokemon Episodes \033[32m" . $range[0] . "\033[0m - \033[32m" . $range[1] . "\033[0m\n";
+    for ($a = $range[0]; $a <= $range[1]; $a++) {
+        $episode = poke($a);
+        if ($episode != null) {
+            echo "\033[32mFound episode " . $a . " - method #" . $episode[1] . " - " . $episode[0] . "\033[0m\n";
+        } else {
+            echo "\033[31mEpisode " . $a . " not found!\033[0m\n";
+        }
+    }
+    echo "\nData fetched in " . (microtime(true)-$time_start) . " seconds.\n";
+
 // Retrieve a single specified episode
-} else {
-    $id = $argv[1];
+} else if (is_numeric($arg)) {
 
     // Error message if no episode specified
-    if ($id == null) {
-        die("\033[31mError: No episode specified!\n\033[0mUsage: php poke.php [episode_number]\n");
+    if ($arg == null) {
+        die("\033[31mError: No episode specified!\n\033[0mUsage: php poke.php [test | episode_number | range]\n");
     }
 
     // Start timer
     $time_start = microtime(true);
 
     // Fetch episode data
-    echo "Attempting to retrieve Pokemon Episode \033[32m#" . $id . "\033[0m";
+    echo "Attempting to retrieve Pokemon Episode \033[32m#" . $arg . "\033[0m";
+    $episode = poke($arg);
 
-    $episode = poke($id);
     if ($episode != null) {
-        echo "\n\033[32mFound episode " . $id . " - method #" . $episode[1] . " - " . $episode[0] . "\033[0m";
-        echo "\n\nData fetched in " . (microtime(true)-$time_start) . " seconds.\n";
+        echo "\n\033[32mFound episode " . $arg . " - method #" . $episode[1] . " - " . $episode[0] . "\033[0m";
     } else {
-        echo "\n\033[31mEpisode " . $id . " not found!\033[0m\n";
+        echo "\n\033[31mEpisode " . $arg . " not found!\033[0m\n";
     }
+    echo "\n\nData fetched in " . (microtime(true)-$time_start) . " seconds.\n";
+} else {
+    die("\033[31mError: Unknown input!\n\033[0mUsage: php poke.php [test | episode_number | range]\n");
 }
 
 function poke($id = 1) {
