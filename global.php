@@ -21,7 +21,7 @@ $seaname = array(1 => "Indigo League",
 
 function extractData($data, $search, $ending, $specific = -1) {
 	$matches = findall($search, $data);
-	foreach ($matches as &$val) {
+	@foreach ($matches as &$val) {
 		$offset = 0;
 		$val += strlen($search);
         while (substr($data, $val+$offset, strlen($ending)) != $ending) {
@@ -133,7 +133,7 @@ function pokeTitle($num) {
 function download($num, $title, $url) {
     global $seanum, $seaname;
 
-    mkdir("pokemon");
+    @mkdir("pokemon");
 
     // File extension
     $headers = get_headers($url);
@@ -143,8 +143,8 @@ function download($num, $title, $url) {
     } else {
         $ext = "mp4";
     }
-    mkdir("pokemon/" . seasonNum($num) . " - " . $seaname[seasonNum($num)]);
-    shell_exec("wget -O \"pokemon/" . seasonNum($num) . " - " . $seaname[seasonNum($num)] . "/[" . $num . "] - " . $title . "." . $ext . "\" " . $url . " --continue");
+    @mkdir("pokemon/" . seasonNum($num) . " - " . $seaname[seasonNum($num)]);
+    @shell_exec("wget -O \"pokemon/" . seasonNum($num) . " - " . $seaname[seasonNum($num)] . "/[" . $num . "] - " . $title . "." . $ext . "\" " . $url . " --continue");
 
 }
 
