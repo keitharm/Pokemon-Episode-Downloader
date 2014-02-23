@@ -21,7 +21,7 @@ $seaname = array(1 => "Indigo League",
 
 function extractData($data, $search, $ending, $specific = -1) {
 	$matches = findall($search, $data);
-	@foreach ($matches as &$val) {
+	foreach ($matches as &$val) {
 		$offset = 0;
 		$val += strlen($search);
         while (substr($data, $val+$offset, strlen($ending)) != $ending) {
