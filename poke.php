@@ -1,26 +1,39 @@
 <?php
 require_once("global.php");
 
-// Argument mode/episode number
-$arg = $argv[1];
+// Start up display
+displayLogo();
+echo "Version " . VERSION . ENDL . ENDL;
 
-/*
-// Specific force method
-$method = $argv[2];
-if ($method == null) {
-    $method = 1;
-} else if (!is_numeric($method) || $method > 3 || $method < 1) {
-    die("Error: Specified method is invalid!\n");
+// Mode/episode number
+$arg = @$argv[1];
+if ($arg != all) {
+    if (strpos($arg, "-") == false) {
+        if (!is_numeric($arg)) {
+            if ($arg == "help") {
+                displayUsage();
+                die;
+            } else {
+                die(RED . "Error: Unknown mode. Must be #, #-#, or all." . WHITE . ENDL . "Type php poke.php help for usage." . WHITE . ENDL);
+            }
+        }
+    }
 }
-*/
-$method = 1;
 
-$save = $argv[2];
-
+// Download files option
+$save = @$argv[2];
 if ($save == null) {
     $save = false;
-} else if ($save != "false" && $save != "true") {
-    die("Error: Save mode is neither true nor false!\n");
+} else if ($save != "false" && $save != "true" && $save != "save") {
+    die(RED . "Error: Save mode is neither true/save nor false." . WHITE . ENDL . "Type php poke.php help for usage." . WHITE . ENDL);
+}
+
+// Method to download files with
+$method = @$argv[3];
+if ($method == null) {
+    $method = "all";
+} else if (!in_array($method, array(1,2,3,"all"))) {
+    die(RED . "Error: Method must be 1, 2, 3, or all." . WHITE . ENDL . "Type php poke.php help for usage." . WHITE . ENDL);
 }
 
 // Attempt to fetch all pokemon episodes
@@ -28,75 +41,95 @@ if ($arg == "all") {
 
     // Start timer
     $time_start = microtime(true);
+    $already = already();
 
-    for ($a = 1; $a < 808; $a++) {
+    for ($a = 1; $a < TOTAL; $a++) {
+        if (in_array($a, $already)) {
+            echo PURPLE . "Skipping episode " . $a . " - It has already been downloaded." . WHITE . ENDL;
+            usleep(50000);
+            continue;
+        }
         $episode = poke($a, $method);
         if ($episode != null) {
             $title = pokeTitle($a);
-            echo "\033[32mFound episode " . $a . " (" . $title . ") - method #" . $episode[1] . " - " . $episode[0] . "\033[0m\n";
-            if ($save == "true") {
+            echo GREEN . "Found episode " . $a . " (" . $title . ") - method #" . $episode[1] . " - " . $episode[0] . WHITE . ENDL;
+            if ($save == "true" || $save == "save") {
                 download($a, $title, $episode[0]);
             }
         } else {
-            echo "\033[31mEpisode " . $a . " not found!\033[0m\n";
+            echo RED . "Episode " . $a . " not found." . WHITE . ENDL;
         }
     }
-    echo "\nData fetched in " . (microtime(true)-$time_start) . " seconds.\n";
+    echo "Data fetched in " . (microtime(true)-$time_start) . " seconds." . ENDL;
 
 // Retrieve a range of episodes
 } else if (strpos($arg, "-") != false) {
 
     // Start timer
     $time_start = microtime(true);
+    $already = already();
     // Extract range
     $range = explode("-", $arg);
     // Range error checking
     if ($range[0] > $range[1] || !is_numeric($range[0]) || !is_numeric($range[1])) {
-        die("\033[31mError: Episode range is invalid!\n");
+        die(RED . "Error: Episode range is invalid." . WHITE . ENDL);
     }
 
     // Fetch episode data
-    echo "Attempting to retrieve Pokemon Episodes \033[32m" . $range[0] . "\033[0m - \033[32m" . $range[1] . "\033[0m\n";
+    echo "Attempting to retrieve Pokemon Episodes " . GREEN . $range[0] . WHITE . " - " . GREEN . $range[1] . WHITE . ENDL;
     for ($a = $range[0]; $a <= $range[1]; $a++) {
+        if (in_array($a, $already)) {
+            echo PURPLE . "Skipping episode " . $a . " - It has already been downloaded." . WHITE . ENDL;
+            usleep(50000);
+            continue;
+        }
         $episode = poke($a, $method);
         if ($episode != null) {
             $title = pokeTitle($a);
-            echo "\033[32mFound episode " . $a . " - method #" . $episode[1] . " - " . $episode[0] . "\033[0m\n";
-            if ($save == "true") {
+            echo GREEN . "Found episode " . $a . " (" . $title . ") - method #" . $episode[1] . " - " . $episode[0] . WHITE . ENDL;
+            if ($save == "true" || $save == "save") {
                 download($a, $title, $episode[0]);
             }
         } else {
-            echo "\033[31mEpisode " . $a . " not found!\033[0m\n";
+            echo RED . "Episode " . $a . " not found." . WHITE . ENDL;
         }
     }
-    echo "\nData fetched in " . (microtime(true)-$time_start) . " seconds.\n";
+    echo "Data fetched in " . (microtime(true)-$time_start) . " seconds." . ENDL;
 
 // Retrieve a single specified episode
 } else if (is_numeric($arg)) {
 
     // Error message if no episode specified
     if ($arg == null) {
-        die("\033[31mError: No episode specified!\n\033[0mUsage: php poke.php [all | episode_number | range]\n");
+        die(RED . "Error: No episode specified." . ENDL . WHITE . displayUsage() . ENDL);
     }
 
     // Start timer
     $time_start = microtime(true);
-
-    // Fetch episode data
-    echo "Attempting to retrieve Pokemon Episode \033[32m#" . $arg . "\033[0m";
-    $episode = poke($arg, $method);
-
-    if ($episode != null) {
-        $title = pokeTitle($arg);
-        echo "\n\033[32mFound episode " . $arg . " - method #" . $episode[1] . " - " . $episode[0] . "\033[0m\n";
-        if ($save == "true") {
-            download($arg, $title, $episode[0]);
-        }
-    } else {
-        echo "\n\033[31mEpisode " . $arg . " not found!\033[0m\n";
+    $already = already();
+    if (in_array($arg, $already)) {
+        echo PURPLE . "Skipping episode " . $arg . " - It has already been downloaded." . WHITE . ENDL;
+        $skip = true;
     }
-    echo "\n\nData fetched in " . (microtime(true)-$time_start) . " seconds.\n";
+
+    if (!$skip) {
+        // Fetch episode data
+        echo "Attempting to retrieve Pokemon Episode " . GREEN . "#" . $arg . ENDL;
+        $episode = poke($arg, $method);
+
+        if ($episode != null) {
+            $title = pokeTitle($arg);
+            echo GREEN . "Found episode " . $arg . " (" . $title . ") - method #" . $episode[1] . " - " . $episode[0] . WHITE . ENDL;
+            if ($save == "true" || $save == "save") {
+                download($arg, $title, $episode[0]);
+            }
+        } else {
+            echo RED . "Episode " . $arg . " not found." . WHITE . ENDL;
+        }
+    }
+    echo "Data fetched in " . (microtime(true)-$time_start) . " seconds." . ENDL;
 } else {
-    die("Error: Unknown input!\nUsage: php poke.php [all | episode_number | range]\n");
+    echo RED . "Error: Unknown input!" . WHITE . ENDL;
+    echo displayUsage();
 }
 ?>

@@ -1,5 +1,27 @@
 <?php
-$seanum = array(1 => 1, 83, 119, 160, 212, 277, 317, 369, 423, 469, 521, 573, 626, 660, 710, 759, 784, 804, 808);
+// Version
+define("VERSION", "1.0.5");
+// Enable color
+define("COLOR", true);
+// Total number of pokemon episodes
+define("TOTAL", 809);
+define("ENDL", "\n");
+
+
+if (COLOR) {
+    define("GREEN", "\033[32m");
+    define("RED", "\033[31m");
+    define("PURPLE", "\033[35;1m");
+    define("WHITE", "\033[0m");
+} else {
+    define("GREEN", null);
+    define("RED", null);
+    define("PURPLE", null);
+    define("WHITE", null);
+}
+
+$seanum = array(1 => 1, 83, 119, 160, 212, 277, 317, 369, 423, 469, 521, 573, 626, 660, 710, 759, 784, 804, TOTAL);
+$seaamt = array(1 => 1, 83, 36, 41, 52, 65, 40, 52, 54, 46, 52, 52, 53, 34, 50, 49, 25, 20, TOTAL-804);
 $seaname = array(1 => "Indigo League",
     "The Orange Island League",
     "The Johto Journeys",
@@ -72,62 +94,73 @@ function findall($needle, $haystack) {
 }
 
 function poke($id = 1, $method = 1) {
-    // To fix the method number the user selects
-    --$method;
-
     $found = false;
 
-    while (!$found) {
-        // Give up after 3 (can't quite crack how the 4th one works yet) methods
-        if (++$method == 4) {
-            return null;
+    // Try to download via loadup.ru
+    if ($method == 1) {
+        $data = file_get_contents("http://pokemonepisode.org/1.php?P-ID=" . $id);
+
+        // Detect if valid video url is found
+        $val = extractData($data, "file=", "\" wid");
+        if ($val != false) {
+            $found = true;
+            $url = $val;
+        }
+    // Try to download via VideoBam
+    } else if ($method == 2) {
+        $pre_data = file_get_contents("http://pokemonepisode.org/2.php?P-ID=" . $id);
+        $data = file_get_contents(extractData($pre_data, "src=\"", "\""));
+
+        // Detect if valid video url is found
+        $val = extractData($data, "high: '", "'");
+        if ($val != false) {
+            $found = true;
+            $url = $val;
+        }
+    // Try to download via DailyMotion
+    } else if ($method == 3) {
+        $pre_data = file_get_contents("http://pokemonepisode.org/3.php?P-ID=" . $id);
+        $data = file_get_contents(extractData($pre_data, "src=\"", "\""));
+
+        // Detect if valid video url is found
+        $val = extractData($data, "stream_h264_url\":\"", "\"");
+        if ($val != false) {
+            $found = true;
+
+            // Since DailyMotion adds extraneous slashes
+            $url = stripslashes($val);
+        }
+    } else if ($method == "all") {
+        $method_one = poke($id, 1);
+        if ($method_one != null) {
+            return $method_one;
         }
 
-        // Try to download via loadup.ru
-        if ($method == 1) {
-            $data = file_get_contents("http://pokemonepisode.org/1.php?P-ID=" . $id);
-
-            // Detect if valid video url is found
-            $val = extractData($data, "file=", "\" wid");
-            if ($val != false) {
-                $found = true;
-                $url = $val;
-            }
-        // Try to download via VideoBam
-        } else if ($method == 2) {
-            $pre_data = file_get_contents("http://pokemonepisode.org/2.php?P-ID=" . $id);
-            $data = file_get_contents(extractData($pre_data, "src=\"", "\""));
-
-            // Detect if valid video url is found
-            $val = extractData($data, "high: '", "'");
-            if ($val != false) {
-                $found = true;
-                $url = $val;
-            }
-        // Try to download via DailyMotion
-        } else if ($method == 3) {
-            $pre_data = file_get_contents("http://pokemonepisode.org/3.php?P-ID=" . $id);
-            $data = file_get_contents(extractData($pre_data, "src=\"", "\""));
-
-            // Detect if valid video url is found
-            $val = extractData($data, "stream_h264_url\":\"", "\"");
-            if ($val != false) {
-                $found = true;
-
-                // Since DailyMotion adds extraneous slashes
-                $url = stripslashes($val);
-            }
-        } else {
-            return null;
+        $method_two = poke($id, 2);
+        if ($method_two != null) {
+            return $method_two;
         }
+
+        $method_three = poke($id, 3);
+        if ($method_three != null) {
+            return $method_three;
+        }
+    } else {
+        return null;
     }
-    return array($url, $method);
+
+    if ($found) {
+        return array($url, $method);
+    } else {
+        return null;
+    }
 }
 
 function pokeTitle($num) {
     $data = file_get_contents("http://pokemonepisode.org/episode-" . $num);
     $title = extractData($data, "&#8211; ", "<", 1);
-    return $title;
+    str_replace("&amp;", "&", $title);
+    return html_entity_decode($title);
 }
 
 function download($num, $title, $url) {
@@ -156,5 +189,94 @@ function seasonNum($episode) {
             return $a;
         }
     }
+}
+
+function displayLogo() {
+    echo " ____       _                                  _____       _               _" . ENDL;
+    echo "|  _ \ ___ | | _____ _ __ ___   ___  _ __     | ____|_ __ (_)___  ___   __| | ___" . ENDL;
+    echo "| |_) / _ \| |/ / _ \ '_ ` _ \ / _ \| '_ \\    |  _| | '_ \| / __|/ _ \ / _` |/ _ \\" . ENDL;
+    echo "|  __/ (_) |   <  __/ | | | | | (_) | | | |   | |___| |_) | \__ \ (_) | (_| |  __/" . ENDL;
+    echo "|_|   \___/|_|\_\___|_| |_| |_|\___/|_| |_|   |_____| .__/|_|___/\___/ \__,_|\___|" . ENDL;
+    echo "                                                    |_|" . ENDL;
+    echo " ____                      _                 _" . ENDL;
+    echo "|  _ \  _____      ___ __ | | ___   __ _  __| | ___ _ __" . ENDL;
+    echo "| | | |/ _ \ \ /\ / / '_ \| |/ _ \ / _` |/ _` |/ _ \ '__|" . ENDL;
+    echo "| |_| | (_) \ V  V /| | | | | (_) | (_| | (_| |  __/ |" . ENDL;
+    echo "|____/ \___/ \_/\_/ |_| |_|_|\___/ \__,_|\__,_|\___|_|" . ENDL;
+}
+
+function displayUsage() {
+    echo "Usage: php poke.php mode [save] [method]" . ENDL;
+    echo "\t mode:" . ENDL;
+    echo "\t\t#      - Specific episode fetch." . ENDL;
+    echo "\t\t#-#    - Range of episodes to fetch." . ENDL;
+    echo "\t\tall    - Fetch all episodes." . ENDL;
+    echo "\t save:" . ENDL;
+    echo "\t\ttrue   - Save the files into organized directory hierarchy." . ENDL;
+    echo "\t\tsave   - Same thing as true." . ENDL;
+    echo "\t\t*false - Don't save files, only display URLs." . ENDL;
+    echo "\t method:" . ENDL;
+    echo "\t\t1      - Use loadup.ru via pokemonepisode.org to download." . ENDL;
+    echo "\t\t2      - Use VideoBam via pokemonepisode.org to download." . ENDL;
+    echo "\t\t3      - Use DailyMotion via pokemonepisode.org to download." . ENDL;
+    echo "\t\t*all   - Use all 3 modes via pokemonepisode.org to download." . ENDL;
+    echo ENDL;
+    echo "\t* = default option" . ENDL . ENDL;
+}
+
+function checkFiles() {
+    $raw = dirToArray("pokemon");
+    foreach ($raw as $key => $val) {
+        $sub_raw = dirToArray("pokemon/" . $key);
+        $season[] = extractNum($key);
+        foreach ($sub_raw as $sub_key => $sub_val) {
+            $episode[] = extractNum($sub_val);
+            $specific[$key][] = extractNum($sub_val);
+        }
+        sort($specific[$key]);
+    }
+    sort($episode);
+    sort($season);
+    return array($season, $episode, $specific);
+}
+
+function checkCompletion() {
+    global $seanum, $seaname, $seaamt;
+    $data = checkFiles();
+
+    echo "Episode download completion (" . GREEN . count($data[1]) . "/" . TOTAL . WHITE . ") - " . round(count($data[1])/TOTAL*100) . "%" . ENDL;
+    foreach($seaname as $val) {
+        $a++;
+        echo PURPLE . $val . WHITE . " (" . count($data[2][$a . " - " . $val]) . "/" . $seaamt[$a+1] . ") - " . ENDL;
+    }
+}
+
+function extractNum($string) {
+    if (strpos($string, "[") !== false) {
+        return extractData($string, "[", "]");
+    } else {
+        return extractData("A" . $string, "A", " ");
+    }
+}
+
+function dirToArray($dir) {
+   $result = array();
+   $cdir = scandir($dir);
+
+   foreach ($cdir as $key => $value) {
+      if (!in_array($value,array(".",".."))) {
+         if (is_dir($dir . DIRECTORY_SEPARATOR . $value)) {
+            $result[$value] = dirToArray($dir . DIRECTORY_SEPARATOR . $value);
+         } else {
+            $result[] = $value;
+         }
+      }
+   }
+   return $result;
+}
+
+function already() {
+    $data = checkFiles();
+    return $data[1];
 }
 ?>
