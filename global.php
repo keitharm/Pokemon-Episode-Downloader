@@ -120,7 +120,7 @@ function poke($id = 1, $method = 1) {
     // Try to download via DailyMotion
     } else if ($method == 3) {
         $pre_data = file_get_contents("http://pokemonepisode.org/3.php?P-ID=" . $id);
-        $data = file_get_contents(extractData($pre_data, "src=\"", "\""));
+        $data = @file_get_contents(extractData($pre_data, "src=\"", "\""));
 
         // Detect if valid video url is found
         $val = extractData($data, "stream_h264_url\":\"", "\"");
