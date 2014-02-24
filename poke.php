@@ -7,7 +7,7 @@ echo "Version " . VERSION . ENDL . ENDL;
 
 // Mode/episode number
 $arg = @$argv[1];
-if ($arg != all) {
+if ($arg != "all") {
     if (strpos($arg, "-") == false) {
         if (!is_numeric($arg)) {
             if ($arg == "help") {

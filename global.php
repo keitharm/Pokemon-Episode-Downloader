@@ -42,15 +42,15 @@ $seaname = array(1 => "Indigo League",
     "XY");
 
 function extractData($data, $search, $ending, $specific = -1) {
-	$matches = findall($search, $data);
-	foreach ($matches as &$val) {
-		$offset = 0;
-		$val += strlen($search);
+    $matches = findall($search, $data);
+    foreach ($matches as &$val) {
+        $offset = 0;
+        $val += strlen($search);
         while (substr($data, $val+$offset, strlen($ending)) != $ending) {
             $offset++;
         }
-		$val = substr($data, $val, $offset);
-	}
+        $val = substr($data, $val, $offset);
+    }
     if ($matches == false) {
         return false;
     }
@@ -59,7 +59,7 @@ function extractData($data, $search, $ending, $specific = -1) {
         if (count($matches) == 1) {
             return $matches[0];
         }
-	    return $matches;
+        return $matches;
     }
     return $matches[$specific-1];
 }
@@ -90,7 +90,7 @@ function findall($needle, $haystack) {
     if (array_key_exists(0, $found)) { 
         return $found;
     }
-    return false;
+    return array();
 }
 
 function poke($id = 1, $method = 1) {
@@ -160,7 +160,7 @@ function pokeTitle($num) {
     $data = file_get_contents("http://pokemonepisode.org/episode-" . $num);
     $title = extractData($data, "&#8211; ", "<", 1);
     str_replace("&amp;", "&", $title);
-    return html_entity_decode($title);
+    return stripslashes(html_entity_decode($title));
 }
 
 function download($num, $title, $url) {
@@ -177,8 +177,14 @@ function download($num, $title, $url) {
         $ext = "mp4";
     }
     @mkdir("pokemon/" . seasonNum($num) . " - " . $seaname[seasonNum($num)]);
+    $current = current_episodes();
+    var_dump(strpos($current, $num . ENDL));
+    if (strpos($current, $num . ENDL) === false) {
+        file_put_contents(".current", $current . $num . ENDL);
+    }
     @shell_exec("wget -O \"pokemon/" . seasonNum($num) . " - " . $seaname[seasonNum($num)] . "/[" . $num . "] - " . $title . "." . $ext . "\" " . $url . " --continue");
-
+    $current = file_get_contents(".current");
+    file_put_contents(".current", str_replace($num . ENDL, null, $current));
 }
 
 function seasonNum($episode) {
@@ -226,6 +232,7 @@ function displayUsage() {
 
 function checkFiles() {
     $raw = dirToArray("pokemon");
+    unset($raw[0]);
     foreach ($raw as $key => $val) {
         $sub_raw = dirToArray("pokemon/" . $key);
         $season[] = extractNum($key);
@@ -261,10 +268,10 @@ function extractNum($string) {
 
 function dirToArray($dir) {
    $result = array();
-   $cdir = scandir($dir);
+   $cdir = @scandir($dir);
 
    foreach ($cdir as $key => $value) {
-      if (!in_array($value,array(".",".."))) {
+      if (!in_array($value,array(".","..",".DS_Store"))) {
          if (is_dir($dir . DIRECTORY_SEPARATOR . $value)) {
             $result[$value] = dirToArray($dir . DIRECTORY_SEPARATOR . $value);
          } else {
@@ -277,6 +284,18 @@ function dirToArray($dir) {
 
 function already() {
     $data = checkFiles();
+    $current = current_episodes();
+    $ex = explode(ENDL, $current);
+
+    foreach ($data[1] as $key => $val) {
+        if (in_array($val, $ex)) {
+            unset($data[1][$key]);
+        }
+    }
     return $data[1];
+}
+
+function current_episodes() {
+    return file_get_contents(".current");
 }
 ?>
