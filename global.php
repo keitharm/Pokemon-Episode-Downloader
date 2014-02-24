@@ -296,6 +296,6 @@ function already() {
 }
 
 function current_episodes() {
-    return file_get_contents(".current");
+    return @file_get_contents(".current");
 }
 ?>
