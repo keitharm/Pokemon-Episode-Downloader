@@ -178,7 +178,6 @@ function download($num, $title, $url) {
     }
     @mkdir("pokemon/" . seasonNum($num) . " - " . $seaname[seasonNum($num)]);
     $current = current_episodes();
-    var_dump(strpos($current, $num . ENDL));
     if (strpos($current, $num . ENDL) === false) {
         file_put_contents(".current", $current . $num . ENDL);
     }
@@ -259,10 +258,10 @@ function checkCompletion() {
 }
 
 function extractNum($string) {
-    if (strpos($string, "[") !== false) {
+    if ($string[0] == "[") {
         return extractData($string, "[", "]");
     } else {
-        return extractData("A" . $string, "A", " ");
+        return trim(substr($string, 0, 2));
     }
 }
 
