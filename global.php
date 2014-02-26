@@ -6,17 +6,20 @@ define("COLOR", true);
 // Total number of pokemon episodes
 define("TOTAL", 809);
 define("ENDL", "\n");
+define("DELAY", 5000);
 
 
 if (COLOR) {
     define("GREEN", "\033[32m");
     define("RED", "\033[31m");
     define("PURPLE", "\033[35;1m");
+    define("YELLOW", "\033[33m");
     define("WHITE", "\033[0m");
 } else {
     define("GREEN", null);
     define("RED", null);
     define("PURPLE", null);
+    define("YELLOW", null);
     define("WHITE", null);
 }
 
@@ -296,5 +299,20 @@ function already() {
 
 function current_episodes() {
     return @file_get_contents(".current");
+}
+
+function addSkip($num) {
+    $skips = getSkips(true);
+    if (!in_array($num, $skips)) {
+        file_put_contents(".skip", getSkips() . $num . ENDL);
+    }
+}
+
+function getSkips($array = false) {
+    $skips = @file_get_contents(".skip");
+    if (!$array) {
+        return $skips;
+    }
+    return explode(ENDL, $skips);
 }
 ?>

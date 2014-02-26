@@ -22,7 +22,7 @@ if ($arg != "all") {
 
 // Download files option
 $save = @$argv[2];
-if ($save == null) {
+if ($save == null || $save == "false") {
     $save = false;
 } else if ($save != "false" && $save != "true" && $save != "save") {
     die(RED . "Error: Save mode is neither true/save nor false." . WHITE . ENDL . "Type php poke.php help for usage." . WHITE . ENDL);
@@ -42,11 +42,16 @@ if ($arg == "all") {
     // Start timer
     $time_start = microtime(true);
     $already = already();
+    $skips = getSkips(true);
 
     for ($a = 1; $a < TOTAL; $a++) {
-        if (in_array($a, $already)) {
+        if (in_array($a, $already) && $save == true) {
             echo PURPLE . "Skipping episode " . $a . " - It has already been downloaded." . WHITE . ENDL;
-            usleep(50000);
+            usleep(DELAY);
+            continue;
+        } else if (in_array($a, $skips) && $save == true) {
+            echo YELLOW . "Skipping episode " . $a . " - On .skip blacklist." . WHITE . ENDL;
+            usleep(DELAY);
             continue;
         }
         $episode = poke($a, $method);
@@ -57,7 +62,8 @@ if ($arg == "all") {
                 download($a, $title, $episode[0]);
             }
         } else {
-            echo RED . "Episode " . $a . " not found." . WHITE . ENDL;
+            echo RED . "Episode " . $a . " not found - adding to blacklist." . WHITE . ENDL;
+            addSkip($a);
         }
     }
     echo "Data fetched in " . (microtime(true)-$time_start) . " seconds." . ENDL;
@@ -68,6 +74,8 @@ if ($arg == "all") {
     // Start timer
     $time_start = microtime(true);
     $already = already();
+    $skips = getSkips(true);
+
     // Extract range
     $range = explode("-", $arg);
     // Range error checking
@@ -78,9 +86,13 @@ if ($arg == "all") {
     // Fetch episode data
     echo "Attempting to retrieve Pokemon Episodes " . GREEN . $range[0] . WHITE . " - " . GREEN . $range[1] . WHITE . ENDL;
     for ($a = $range[0]; $a <= $range[1]; $a++) {
-        if (in_array($a, $already)) {
+        if (in_array($a, $already) && $save == true) {
             echo PURPLE . "Skipping episode " . $a . " - It has already been downloaded." . WHITE . ENDL;
-            usleep(50000);
+            usleep(DELAY);
+            continue;
+        } else if (in_array($a, $skips) && $save == true) {
+            echo YELLOW . "Skipping episode " . $a . " - On .skip blacklist." . WHITE . ENDL;
+            usleep(DELAY);
             continue;
         }
         $episode = poke($a, $method);
@@ -91,7 +103,8 @@ if ($arg == "all") {
                 download($a, $title, $episode[0]);
             }
         } else {
-            echo RED . "Episode " . $a . " not found." . WHITE . ENDL;
+            echo RED . "Episode " . $a . " not found - adding to blacklist." . WHITE . ENDL;
+            addSkip($a);
         }
     }
     echo "Data fetched in " . (microtime(true)-$time_start) . " seconds." . ENDL;
@@ -107,9 +120,15 @@ if ($arg == "all") {
     // Start timer
     $time_start = microtime(true);
     $already = already();
-    if (in_array($arg, $already)) {
+    $skips = getSkips(true);
+
+    if (in_array($arg, $already) && $save == true) {
         echo PURPLE . "Skipping episode " . $arg . " - It has already been downloaded." . WHITE . ENDL;
         $skip = true;
+    } else if (in_array($arg, $skips) && $save == true) {
+        echo YELLOW . "Skipping episode " . $arg . " - On .skip blacklist." . WHITE . ENDL;
+        usleep(DELAY);
+        continue;
     }
 
     if (!$skip) {
@@ -124,7 +143,8 @@ if ($arg == "all") {
                 download($arg, $title, $episode[0]);
             }
         } else {
-            echo RED . "Episode " . $arg . " not found." . WHITE . ENDL;
+            echo RED . "Episode " . $arg . " not found - adding to blacklist." . WHITE . ENDL;
+            addSkip($arg);
         }
     }
     echo "Data fetched in " . (microtime(true)-$time_start) . " seconds." . ENDL;
