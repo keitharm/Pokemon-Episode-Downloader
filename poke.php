@@ -7,6 +7,12 @@ echo "Version " . VERSION . ENDL . ENDL;
 
 // Mode/episode number
 $arg = @$argv[1];
+
+if ($arg == "check") {
+    checkCompletion();
+    die;
+}
+
 if ($arg != "all") {
     if (strpos($arg, "-") == false) {
         if (!is_numeric($arg)) {
@@ -14,7 +20,7 @@ if ($arg != "all") {
                 displayUsage();
                 die;
             } else {
-                die(RED . "Error: Unknown mode. Must be #, #-#, or all." . WHITE . ENDL . "Type php poke.php help for usage." . WHITE . ENDL);
+                die(RED . "Error: Unknown mode. Must be #, #-#, all, or check." . WHITE . ENDL . "Type php poke.php help for usage." . WHITE . ENDL);
             }
         }
     }

@@ -1,6 +1,6 @@
 <?php
 // Version
-define("VERSION", "1.0.5");
+define("VERSION", "1.1.0");
 // Enable color
 define("COLOR", true);
 // Total number of pokemon episodes
@@ -219,6 +219,7 @@ function displayUsage() {
     echo "\t\t#      - Specific episode fetch." . ENDL;
     echo "\t\t#-#    - Range of episodes to fetch." . ENDL;
     echo "\t\tall    - Fetch all episodes." . ENDL;
+    echo "\t\tcheck  - View episode download competion status." . ENDL;
     echo "\t save:" . ENDL;
     echo "\t\ttrue   - Save the files into organized directory hierarchy." . ENDL;
     echo "\t\tsave   - Same thing as true." . ENDL;
@@ -256,7 +257,7 @@ function checkCompletion() {
     echo "Episode download completion (" . GREEN . count($data[1]) . "/" . TOTAL . WHITE . ") - " . round(count($data[1])/TOTAL*100) . "%" . ENDL;
     foreach($seaname as $val) {
         $a++;
-        echo PURPLE . $val . WHITE . " (" . count($data[2][$a . " - " . $val]) . "/" . $seaamt[$a+1] . ") - " . ENDL;
+        echo PURPLE . $val . WHITE . " (" . GREEN . count($data[2][$a . " - " . $val]) . "/" . $seaamt[$a+1] . WHITE . ") - " . round(count($data[2][$a . " - " . $val])/$seaamt[$a+1]*100) . "%" . ENDL;
     }
 }
 
