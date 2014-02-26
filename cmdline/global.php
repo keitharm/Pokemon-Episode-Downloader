@@ -1,6 +1,6 @@
 <?php
 // Version
-define("VERSION", "1.1.0");
+define("VERSION", "1.1.5");
 // Enable color
 define("COLOR", true);
 // Total number of pokemon episodes
@@ -243,7 +243,7 @@ function checkFiles() {
             $episode[] = extractNum($sub_val);
             $specific[$key][] = extractNum($sub_val);
         }
-        sort($specific[$key]);
+        @sort($specific[$key]);
     }
     sort($episode);
     sort($season);
@@ -255,6 +255,7 @@ function checkCompletion() {
     $data = checkFiles();
 
     echo "Episode download completion (" . GREEN . count($data[1]) . "/" . TOTAL . WHITE . ") - " . round(count($data[1])/TOTAL*100) . "%" . ENDL;
+    $a = 0;
     foreach($seaname as $val) {
         $a++;
         echo PURPLE . $val . WHITE . " (" . GREEN . count($data[2][$a . " - " . $val]) . "/" . $seaamt[$a+1] . WHITE . ") - " . round(count($data[2][$a . " - " . $val])/$seaamt[$a+1]*100) . "%" . ENDL;
