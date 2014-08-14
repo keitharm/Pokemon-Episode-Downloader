@@ -1,10 +1,10 @@
 <?php
 // Version
-define("VERSION", "1.1.5");
+define("VERSION", "1.2.0");
 // Enable color
 define("COLOR", true);
 // Total number of pokemon episodes
-define("TOTAL", 809);
+define("TOTAL", 832);
 define("ENDL", "\n");
 define("DELAY", 5000);
 
@@ -45,73 +45,79 @@ $seaname = array(1 => "Indigo League",
     "XY");
 
 function extractData($data, $search, $ending, $specific = -1) {
+    $len = strlen($data);
     $matches = findall($search, $data);
-    foreach ($matches as &$val) {
+    $found = array();
+    foreach ($matches as $val) {
+        $bad = false;
         $offset = 0;
         $val += strlen($search);
         while (substr($data, $val+$offset, strlen($ending)) != $ending) {
             $offset++;
+            // If we are outside of the range of the string, there is no ending match.
+            if ($offset > $len) {
+                $bad = true;
+                break;
+            }
         }
-        $val = substr($data, $val, $offset);
+        if (!$bad) {
+            $found[] = substr($data, $val, $offset);
+        }
     }
-    if ($matches == false) {
+    if ($found == false) {
         return false;
     }
 
     if ($specific == -1) {
-        if (count($matches) == 1) {
-            return $matches[0];
+        if (count($found) == 1) {
+            return $found[0];
         }
-        return $matches;
-    }
-    return $matches[$specific-1];
-}
-
-// Function I found online
-// Rewrote it to look nicer (so many comments in the last version!)
-function findall($needle, $haystack) { 
-    $buffer = '';
-    $pos = 0;
-    $end = strlen($haystack);
-    $getchar = '';
-    $needlelen = strlen($needle); 
-    $found = array();
-    
-    while ($pos < $end) { 
-        $getchar = substr($haystack, $pos, 1);
-        if ($getchar != "\\n" || $buffer < $needlelen) { 
-            $buffer = $buffer . $getchar;
-            if (strlen($buffer) > $needlelen) { 
-                $buffer = substr($buffer, -$needlelen);
-            }
-            if ($buffer == $needle) { 
-                $found[] = $pos - $needlelen + 1;
-            } 
-        } 
-        $pos++;
-    } 
-    if (array_key_exists(0, $found)) { 
         return $found;
     }
-    return array();
+    return $found[$specific-1];
+}
+
+// Updated function that finds all occurances of needle
+function findall($needle, $haystack) {
+    $pos = 0;
+    $len = strlen($haystack);
+    $searchlen = strlen($needle);
+    $results = array();
+
+    $data = $haystack;
+    while (1) {
+        $occurance = strpos($data, $needle);
+        if ($occurance === false) {
+            return $results;
+        } else {
+            $pos += $occurance+$searchlen;
+            $results[] = $pos-$searchlen;
+            $data = substr($haystack, ($pos));
+        }
+    }
 }
 
 function poke($id = 1, $method = 1) {
     $found = false;
 
-    // Try to download via loadup.ru
+    // Try to download via Novamov
     if ($method == 1) {
-        $data = file_get_contents("http://pokemonepisode.org/1.php?P-ID=" . $id);
+        $pre_data = file_get_contents("http://pokemonepisode.org/5.php?P-ID=" . $id);
+        $data = file_get_contents(extractData($pre_data, "src='", "' s"));
+
+        $file = extractData($data, 'flashvars.file="', '";');
+        $key  = extractData($data, 'flashvars.filekey="', '";');
+        $post_data = file_get_contents("http://www.novamov.com/api/player.api.php?file=" . $file . "&key=" . $key);
 
         // Detect if valid video url is found
-        $val = extractData($data, "file=", "\" wid");
+        $val = extractData($post_data, "url=", "&title");
         if ($val != false) {
             $found = true;
             $url = $val;
         }
     // Try to download via VideoBam
     } else if ($method == 2) {
-        $pre_data = file_get_contents("http://pokemonepisode.org/2.php?P-ID=" . $id);
+        $pre_data = file_get_contents("http://pokemonepisode.org/3.php?P-ID=" . $id);
         $data = file_get_contents(extractData($pre_data, "src=\"", "\""));
 
         // Detect if valid video url is found
@@ -122,11 +128,17 @@ function poke($id = 1, $method = 1) {
         }
     // Try to download via DailyMotion
     } else if ($method == 3) {
-        $pre_data = file_get_contents("http://pokemonepisode.org/3.php?P-ID=" . $id);
+        $pre_data = file_get_contents("http://pokemonepisode.org/4.php?P-ID=" . $id);
         $data = @file_get_contents(extractData($pre_data, "src=\"", "\""));
 
         // Detect if valid video url is found
-        $val = extractData($data, "stream_h264_url\":\"", "\"");
+        // Tries high quality URL first
+        $val = extractData($data, "stream_h264_hq_url\":\"", "\"");
+        if ($val == null) {
+            // Try lower quality option if high quality not found
+            $val = extractData($data, "stream_h264_url\":\"", "\"");
+        }
+
         if ($val != false) {
             $found = true;
 
@@ -153,7 +165,19 @@ function poke($id = 1, $method = 1) {
     }
 
     if ($found) {
-        return array($url, $method);
+	// File extension
+	$headers = get_headers($url, 1);
+	$ext = $headers["Content-Type"];
+	if (is_array($ext)) {
+		$ext = $ext[1];
+	}
+
+	if ($ext == "Content-Type: video/x-flv" || $method == 1) {
+		$ext = "flv";
+	} else {
+		$ext = "mp4";
+	}
+        return array($url, $method, $ext);
     } else {
         return null;
     }
@@ -166,15 +190,19 @@ function pokeTitle($num) {
     return stripslashes(html_entity_decode($title));
 }
 
-function download($num, $title, $url) {
+function download($num, $title, $url, $method = 0) {
     global $seanum, $seaname;
 
     @mkdir("pokemon");
 
     // File extension
-    $headers = get_headers($url);
-    $ext = $headers[3];
-    if ($ext == "Content-Type: video/x-flv") {
+    $headers = get_headers($url, 1);
+    $ext = $headers["Content-Type"];
+    if (is_array($ext)) {
+        $ext = $ext[1];
+    }
+
+    if ($ext == "Content-Type: video/x-flv" || $method == 1) {
         $ext = "flv";
     } else {
         $ext = "mp4";
@@ -225,7 +253,7 @@ function displayUsage() {
     echo "\t\tsave   - Same thing as true." . ENDL;
     echo "\t\t*false - Don't save files, only display URLs." . ENDL;
     echo "\t method:" . ENDL;
-    echo "\t\t1      - Use loadup.ru via pokemonepisode.org to download." . ENDL;
+    echo "\t\t1      - Use Novamov via pokemonepisode.org to download." . ENDL;
     echo "\t\t2      - Use VideoBam via pokemonepisode.org to download." . ENDL;
     echo "\t\t3      - Use DailyMotion via pokemonepisode.org to download." . ENDL;
     echo "\t\t*all   - Use all 3 modes via pokemonepisode.org to download." . ENDL;
@@ -258,7 +286,7 @@ function checkCompletion() {
     $a = 0;
     foreach($seaname as $val) {
         $a++;
-        echo PURPLE . $val . WHITE . " (" . GREEN . count($data[2][$a . " - " . $val]) . "/" . $seaamt[$a+1] . WHITE . ") - " . round(count($data[2][$a . " - " . $val])/$seaamt[$a+1]*100) . "%" . ENDL;
+        echo $a . ". " . PURPLE . $val . WHITE . " (" . GREEN . count($data[2][$a . " - " . $val]) . "/" . $seaamt[$a+1] . WHITE . ") - " . round(count($data[2][$a . " - " . $val])/$seaamt[$a+1]*100) . "%" . ENDL;
     }
 }
 

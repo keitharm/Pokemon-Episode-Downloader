@@ -50,7 +50,7 @@ if ($arg == "all") {
     $already = already();
     $skips = getSkips(true);
 
-    for ($a = 1; $a < TOTAL; $a++) {
+    for ($a = 1; $a <= TOTAL; $a++) {
         if (in_array($a, $already) && $save == true) {
             echo PURPLE . "Skipping episode " . $a . " - It has already been downloaded." . WHITE . ENDL;
             usleep(DELAY);
@@ -65,7 +65,7 @@ if ($arg == "all") {
             $title = pokeTitle($a);
             echo GREEN . "Found episode " . $a . " (" . $title . ") - method #" . $episode[1] . " - " . $episode[0] . WHITE . ENDL;
             if ($save == "true" || $save == "save") {
-                download($a, $title, $episode[0]);
+                download($a, $title, $episode[0], $episode[1]);
             }
         } else {
             echo RED . "Episode " . $a . " not found - adding to blacklist." . WHITE . ENDL;
@@ -106,7 +106,7 @@ if ($arg == "all") {
             $title = pokeTitle($a);
             echo GREEN . "Found episode " . $a . " (" . $title . ") - method #" . $episode[1] . " - " . $episode[0] . WHITE . ENDL;
             if ($save == "true" || $save == "save") {
-                download($a, $title, $episode[0]);
+                download($a, $title, $episode[0], $episode[1]);
             }
         } else {
             echo RED . "Episode " . $a . " not found - adding to blacklist." . WHITE . ENDL;
@@ -131,10 +131,6 @@ if ($arg == "all") {
     if (in_array($arg, $already) && $save == true) {
         echo PURPLE . "Skipping episode " . $arg . " - It has already been downloaded." . WHITE . ENDL;
         $skip = true;
-    } else if (in_array($arg, $skips) && $save == true) {
-        echo YELLOW . "Skipping episode " . $arg . " - On .skip blacklist." . WHITE . ENDL;
-        usleep(DELAY);
-        continue;
     }
 
     if (!$skip) {
@@ -146,7 +142,7 @@ if ($arg == "all") {
             $title = pokeTitle($arg);
             echo GREEN . "Found episode " . $arg . " (" . $title . ") - method #" . $episode[1] . " - " . $episode[0] . WHITE . ENDL;
             if ($save == "true" || $save == "save") {
-                download($arg, $title, $episode[0]);
+                download($arg, $title, $episode[0], $episode[1]);
             }
         } else {
             echo RED . "Episode " . $arg . " not found - adding to blacklist." . WHITE . ENDL;
