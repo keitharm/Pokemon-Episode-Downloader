@@ -102,12 +102,12 @@ function poke($id = 1, $method = 1) {
 
     // Try to download via Novamov
     if ($method == 1) {
-        $pre_data = file_get_contents("http://pokemonepisode.org/5.php?P-ID=" . $id);
-        $data = file_get_contents(extractData($pre_data, "src='", "' s"));
+        $pre_data = @file_get_contents("http://pokemonepisode.org/5.php?P-ID=" . $id);
+        $data = @file_get_contents(extractData($pre_data, "src='", "' s"));
 
         $file = extractData($data, 'flashvars.file="', '";');
         $key  = extractData($data, 'flashvars.filekey="', '";');
-        $post_data = file_get_contents("http://www.novamov.com/api/player.api.php?file=" . $file . "&key=" . $key);
+        $post_data = @file_get_contents("http://www.novamov.com/api/player.api.php?file=" . $file . "&key=" . $key);
 
         // Detect if valid video url is found
         $val = extractData($post_data, "url=", "&title");
@@ -117,8 +117,8 @@ function poke($id = 1, $method = 1) {
         }
     // Try to download via VideoBam
     } else if ($method == 2) {
-        $pre_data = file_get_contents("http://pokemonepisode.org/3.php?P-ID=" . $id);
-        $data = file_get_contents(extractData($pre_data, "src=\"", "\""));
+        $pre_data = @file_get_contents("http://pokemonepisode.org/3.php?P-ID=" . $id);
+        $data = @file_get_contents(extractData($pre_data, "src=\"", "\""));
 
         // Detect if valid video url is found
         $val = extractData($data, "high: '", "'");
@@ -128,7 +128,7 @@ function poke($id = 1, $method = 1) {
         }
     // Try to download via DailyMotion
     } else if ($method == 3) {
-        $pre_data = file_get_contents("http://pokemonepisode.org/4.php?P-ID=" . $id);
+        $pre_data = @file_get_contents("http://pokemonepisode.org/4.php?P-ID=" . $id);
         $data = @file_get_contents(extractData($pre_data, "src=\"", "\""));
 
         // Detect if valid video url is found
@@ -147,7 +147,7 @@ function poke($id = 1, $method = 1) {
         }
     // Try to download via googlevideo/youtube
     } else if ($method == 4) {
-        $pre_data = file_get_contents("http://pokemonepisode.org/1.php?P-ID=" . $id);
+        $pre_data = @file_get_contents("http://pokemonepisode.org/1.php?P-ID=" . $id);
         $data = urldecode(extractData($pre_data, "fmt_stream_map=", "\" wmode=\"")) . "|";
         $urls = extractData($data, "|", "|");
 
@@ -168,7 +168,7 @@ function poke($id = 1, $method = 1) {
     } else if ($method == 5) {
         do {
 	        $z++;
-	        $data = file_get_contents("http://pokemonepisode.org/2.php?P-ID=" . $id);
+	        $data = @file_get_contents("http://pokemonepisode.org/2.php?P-ID=" . $id);
 	        if ($z > 5) {
 		        break;
 	        }
@@ -229,7 +229,7 @@ function poke($id = 1, $method = 1) {
 }
 
 function pokeTitle($num) {
-    $data = file_get_contents("http://pokemonepisode.org/episode-" . $num);
+    $data = @file_get_contents("http://pokemonepisode.org/episode-" . $num);
     $title = extractData($data, "&#8211; ", "<", 1);
     str_replace("&amp;", "&", $title);
     return stripslashes(html_entity_decode($title));
@@ -320,8 +320,8 @@ function checkFiles() {
         }
         @sort($specific[$key]);
     }
-    sort($episode);
-    sort($season);
+    @sort($episode);
+    @sort($season);
     return array($season, $episode, $specific);
 }
 
@@ -349,6 +349,12 @@ function dirToArray($dir) {
    $result = array();
    $cdir = @scandir($dir);
 
+   // Directory structure doesn't exist
+   if ($cdir === false) {
+        createDirectoryStructure();
+        $cdir = @scandir($dir);
+   }
+
    foreach ($cdir as $key => $value) {
       if (!in_array($value,array(".","..",".DS_Store"))) {
          if (is_dir($dir . DIRECTORY_SEPARATOR . $value)) {
@@ -363,6 +369,9 @@ function dirToArray($dir) {
 
 function already() {
     $data = checkFiles();
+    if ($data[1] == null) {
+        return array();
+    }
     $current = current_episodes();
     $ex = explode(ENDL, $current);
 
@@ -391,5 +400,13 @@ function getSkips($array = false) {
         return $skips;
     }
     return explode(ENDL, $skips);
+}
+
+function createDirectoryStructure() {
+    global $seaname;
+    mkdir("pokemon");
+    for ($b = 1; $b <= count($seaname); $b++) {
+        mkdir("pokemon/" . $b . " - " . $seaname[$b]);
+    }
 }
 ?>
