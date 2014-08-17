@@ -68,6 +68,8 @@ for ($a = 1; $a <= count($seaname); $a++) {
                             <th>Mirror 1</th>
                             <th>Mirror 2</th>
                             <th>Mirror 3</th>
+                            <th>Mirror 4</th>
+                            <th>Mirror 5</th>
                             <th>Total Downloads</th>
                             <th>Rate</th>
                           </tr>
@@ -83,6 +85,8 @@ for (;$b <= $seanum[$a+1]; $b++) {
                             <td><a href='poke.php?mirror=1&id=<?=$b?>'>Download</a></td>
                             <td><a href='poke.php?mirror=2&id=<?=$b?>'>Download</a></td>
                             <td><a href='poke.php?mirror=3&id=<?=$b?>'>Download</a></td>
+                            <td><a href='poke.php?mirror=4&id=<?=$b?>'>Download</a></td>
+                            <td><a href='poke.php?mirror=5&id=<?=$b?>'>Download</a></td>
                             <td><?=number_format(getValue($b, "downloads"))?></td>
 <?php
 if (in_array($b, $already)) {

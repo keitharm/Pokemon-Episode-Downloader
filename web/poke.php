@@ -15,6 +15,10 @@ if ($mirror == 1) {
     $episode = poke($id, 2);
 } else if ($mirror == 3) {
     $episode = poke($id, 3);
+} else if ($mirror == 4) {
+    $episode = poke($id, 4);
+} else if ($mirror == 5) {
+    $episode = poke($id, 5);
 } else {
     header('Location: index.php');
     die;
