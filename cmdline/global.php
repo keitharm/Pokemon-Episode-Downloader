@@ -1,6 +1,6 @@
 <?php
 // Version
-define("VERSION", "1.2.0");
+define("VERSION", "1.2.1");
 // Enable color
 define("COLOR", true);
 // Total number of pokemon episodes
@@ -145,6 +145,41 @@ function poke($id = 1, $method = 1) {
             // Since DailyMotion adds extraneous slashes
             $url = stripslashes($val);
         }
+    // Try to download via googlevideo/youtube
+    } else if ($method == 4) {
+        $pre_data = file_get_contents("http://pokemonepisode.org/1.php?P-ID=" . $id);
+        $data = urldecode(extractData($pre_data, "fmt_stream_map=", "\" wmode=\"")) . "|";
+        $urls = extractData($data, "|", "|");
+
+        if (is_array($urls)) {
+            $val = $urls[count($urls)-1];
+        } else {
+            $val = $urls;
+        }
+
+	$val = urldecode($val);
+
+        // Detect if valid video url is found
+        if ($val != false) {
+            $found = true;
+            $url = $val;
+        }
+    // Try to download via loadup.ru
+    } else if ($method == 5) {
+        do {
+	        $z++;
+	        $data = file_get_contents("http://pokemonepisode.org/2.php?P-ID=" . $id);
+	        if ($z > 5) {
+		        break;
+	        }
+        } while (strpos($data, "Error Fetching Video") !== false);
+
+        $val = extractData($data, "f=", "&w");
+        // Detect if valid video url is found
+        if ($val != false) {
+            $found = true;
+            $url = $val;
+        }
     } else if ($method == "all") {
         $method_one = poke($id, 1);
         if ($method_one != null) {
@@ -159,6 +194,16 @@ function poke($id = 1, $method = 1) {
         $method_three = poke($id, 3);
         if ($method_three != null) {
             return $method_three;
+        }
+
+        $method_four = poke($id, 4);
+        if ($method_four != null) {
+            return $method_four;
+        }
+
+        $method_five = poke($id, 5);
+        if ($method_five != null) {
+            return $method_five;
         }
     } else {
         return null;
@@ -212,7 +257,7 @@ function download($num, $title, $url, $method = 0) {
     if (strpos($current, $num . ENDL) === false) {
         file_put_contents(".current", $current . $num . ENDL);
     }
-    @shell_exec("wget -O \"pokemon/" . seasonNum($num) . " - " . $seaname[seasonNum($num)] . "/[" . $num . "] - " . $title . "." . $ext . "\" " . $url . " --continue");
+    @shell_exec("wget -O \"pokemon/" . seasonNum($num) . " - " . $seaname[seasonNum($num)] . "/[" . $num . "] - " . $title . "." . $ext . "\" \"" . $url . "\" --continue");
     $current = file_get_contents(".current");
     file_put_contents(".current", str_replace($num . ENDL, null, $current));
 }
@@ -256,7 +301,9 @@ function displayUsage() {
     echo "\t\t1      - Use Novamov via pokemonepisode.org to download." . ENDL;
     echo "\t\t2      - Use VideoBam via pokemonepisode.org to download." . ENDL;
     echo "\t\t3      - Use DailyMotion via pokemonepisode.org to download." . ENDL;
-    echo "\t\t*all   - Use all 3 modes via pokemonepisode.org to download." . ENDL;
+    echo "\t\t4      - Use Googlevideo via pokemonepisode.org to download." . ENDL;
+    echo "\t\t5      - Use Loadup.ru via pokemonepisode.org to download." . ENDL;
+    echo "\t\t*all   - Use all 5 modes via pokemonepisode.org to download." . ENDL;
     echo ENDL;
     echo "\t* = default option" . ENDL . ENDL;
 }

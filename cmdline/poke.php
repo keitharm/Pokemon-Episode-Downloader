@@ -38,8 +38,8 @@ if ($save == null || $save == "false") {
 $method = @$argv[3];
 if ($method == null) {
     $method = "all";
-} else if (!in_array($method, array(1,2,3,"all"))) {
-    die(RED . "Error: Method must be 1, 2, 3, or all." . WHITE . ENDL . "Type php poke.php help for usage." . WHITE . ENDL);
+} else if (!in_array($method, array(1,2,3,4,5,"all"))) {
+    die(RED . "Error: Method must be 1, 2, 3, 4, 5 or all." . WHITE . ENDL . "Type php poke.php help for usage." . WHITE . ENDL);
 }
 
 // Attempt to fetch all pokemon episodes
