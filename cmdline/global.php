@@ -4,7 +4,7 @@ define("VERSION", "1.2.1");
 // Enable color
 define("COLOR", true);
 // Total number of pokemon episodes
-define("TOTAL", 832);
+define("TOTAL", 844);
 define("ENDL", "\n");
 define("DELAY", 5000);
 
@@ -121,7 +121,7 @@ function poke($id = 1, $method = 1) {
         $data = @file_get_contents(extractData($pre_data, "src=\"", "\""));
 
         // Detect if valid video url is found
-        $val = extractData($data, "high: '", "'");
+        $val = stripslashes(extractData($data, ",\"url\":\"", "\",\"auto"));
         if ($val != false) {
             $found = true;
             $url = $val;
